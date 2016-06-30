@@ -9,39 +9,14 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.apps.rmarathe.mytodoapp.EditActivity"
-    tools:showIn="@layout/activity_edit">
-
+    tools:context="com.apps.rmarathe.mytodoapp.AddActivity">
 
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-
-        android:layout_alignParentStart="true">
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"></TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-           <!-- <EditText
-                android:layout_weight="1"
-                android:inputType="textMultiLine"
-                android:ems="10"
-                android:id="@+id/edEditedItem"
-                android:layout_below="@+id/btnSave"
-                android:layout_alignParentStart="true"
-                android:layout_column="12" />-->
-        </TableRow>
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btnSaveNewItem">
 
         <TableRow
             android:layout_width="match_parent"
@@ -93,7 +68,7 @@
             <DatePicker
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/editDatePicker"
+                android:id="@+id/datePicker"
                 android:layout_weight="1"
                 android:layout_marginBottom="24dp"
                 android:layout_span="1"
@@ -117,7 +92,7 @@
                 android:layout_weight="1"
                 android:layout_column="12"
                 android:layout_marginBottom="24dp"
-                android:id="@+id/editTaskPrioritySpinner"
+                android:id="@+id/taskPrioritySpinner"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" />
         </TableRow>
@@ -136,28 +111,24 @@
                 android:layout_weight="1"
                 android:layout_column="12"
                 android:layout_marginBottom="24dp"
-                android:id="@+id/editTaskStatusSpinner"
+                android:id="@+id/taskStatusSpinner"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" />
-
-        </TableRow>
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <Button
-                android:layout_weight="1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/save"
-                android:id="@+id/btnEditSave"
-                android:onClick="OnClickSave"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentStart="true"
-                android:layout_column="6"/>
 
         </TableRow>
 
 
     </TableLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/save"
+        android:id="@+id/btnSaveNewItem"
+        android:onClick="OnSaveAddItem"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true" />
+
 
 </RelativeLayout>

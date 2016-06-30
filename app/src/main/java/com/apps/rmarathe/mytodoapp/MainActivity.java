@@ -7,27 +7,35 @@ import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> todoItems;
-    ArrayAdapter<String> toDoAdapter;
+    ArrayList<Task> completeTodoItems;
+    ArrayAdapter<Task> toDoAdapter;
     ListView lvItems;
     EditText edAddText;
 
-    private final int REQUEST_CODE = 20;
+    private final int REQUEST_CODE_EDIT = 20;
+    private final int REQUEST_CODE_ADD = 30;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         //rujuta
         checkIfFileExists();
         populateArray();
@@ -45,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 makeFeedbackToast(R.drawable.ic_menu_delete);
-                todoItems.remove(position);
+                completeTodoItems.remove(position);
                 toDoAdapter.notifyDataSetChanged();
-                writeItems();
+                serialWriteItems();
                 return true;
             }
         });
@@ -55,10 +64,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent i = new Intent(MainActivity.this, EditActivity.class);
-                i.putExtra("item_text",todoItems.get(position));
+                i.putExtra("edit_task",completeTodoItems.get(position));
                 i.putExtra("item_position", position);
-                //startActivity(i);
-                startActivityForResult(i, REQUEST_CODE);
+                startActivityForResult(i, REQUEST_CODE_EDIT);
             }
 
         });
@@ -76,21 +84,30 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
-            if (data.hasExtra("updated_text") && data.hasExtra("item_pos")) {
-                String itemText = data.getStringExtra("updated_text");
-                int index = data.getIntExtra("item_pos",0);
-                todoItems.remove(index);
-                todoItems.add(index,itemText);
+        if (resultCode == RESULT_OK && requestCode == REQUEST_CODE_ADD) {
+            if (data.hasExtra("new_task")) {
+                Task task = (Task) data.getSerializableExtra("new_task");
+                completeTodoItems.add(task);
                 toDoAdapter.notifyDataSetChanged();
-                writeItems();
+                serialWriteItems();
             }
         }
+        if (resultCode == RESULT_OK && requestCode == REQUEST_CODE_EDIT) {
+            if (data.hasExtra("edited_task") && data.hasExtra("edited_position")) {
+                Task task = (Task) data.getSerializableExtra("edited_task");
+                int index = data.getIntExtra("edited_position",0);
+                completeTodoItems.remove(index);
+                completeTodoItems.add(index,task);
+                toDoAdapter.notifyDataSetChanged();
+                serialWriteItems();
+            }
+        }
+
     }
 
     private void checkIfFileExists(){
         File filesDir = getFilesDir();
-        File file = new File(filesDir,"todo.txt");
+        File file = new File(filesDir,"taskstodo.txt");
         if(!file.exists())
         {
            try{
@@ -100,14 +117,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void populateArray(){
-        readItems();
-        toDoAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,todoItems);
+
+        serialReadItems();
+        //ArrayAdapter with Custom Object
+        toDoAdapter = new ArrayAdapter<Task>(this, android.R.layout.simple_list_item_2, android.R.id.text1, completeTodoItems){
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+               View view = super.getView(position, convertView, parent);
+                TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+                TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+                text1.setText(completeTodoItems.get(position).getTaskName());
+                text2.setText(completeTodoItems.get(position).getTaskPriority());
+                text2.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+
+                text1.setTextColor(completeTodoItems.get(position).getColorByStatus());
+                text2.setTextColor(completeTodoItems.get(position).getColorByStatus());
+
+               /* if(completeTodoItems.get(position).isTaskStatusDone(completeTodoItems.get(position).getTaskStatus())){
+                    text1.setPaintFlags(text1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                }*/
+                return view;
+            }
+        };
     }
 
     private void readItems(){
         File filesDir = getFilesDir();
         File file = new File(filesDir,"todo.txt");
-        //check if exists else create
         try{
             todoItems = new ArrayList<String>(FileUtils.readLines(file));
         }catch(IOException e){
@@ -122,6 +158,36 @@ public class MainActivity extends AppCompatActivity {
             FileUtils.writeLines(file,todoItems);
         }catch(IOException e){
             System.out.println(e.getMessage());
+        }
+    }
+
+    // Creates an object by reading it from a file
+    public void serialReadItems() {
+        File filesDir = getFilesDir();
+        File file = new File(filesDir,"taskstodo.txt");
+        try {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
+            completeTodoItems = new ArrayList<Task>();
+            completeTodoItems = (ArrayList<Task>)ois.readObject();
+
+            ois.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e){
+            e.printStackTrace();
+        }
+    }
+
+    private void serialWriteItems()
+    {
+        File filesDir = getFilesDir();
+        File file = new File(filesDir,"taskstodo.txt");
+        try{
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+            oos.writeObject(completeTodoItems);
+            oos.close();
+        }catch(IOException e){
+            e.printStackTrace();
         }
     }
 
@@ -141,9 +207,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void OnAddItem(View view) {
-        toDoAdapter.add(edAddText.getText().toString());
-        edAddText.setText("");
-        makeFeedbackToast(R.drawable.ic_menu_add);
-        writeItems();
+        Intent i = new Intent(MainActivity.this, AddActivity.class);
+        startActivityForResult(i, REQUEST_CODE_ADD);
+
     }
 }
